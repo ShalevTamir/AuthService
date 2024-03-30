@@ -18,7 +18,7 @@ namespace AuthService.Services
             var tokenDescription = new SecurityTokenDescriptor()
             {
                 IssuedAt = DateTime.UtcNow,
-                Expires = DateTime.UtcNow.AddHours(5),
+                Expires = DateTime.UtcNow.AddMinutes(5),
                 SigningCredentials = credentials,
                 Issuer = Constants.JWT_ISSUER,
             };
