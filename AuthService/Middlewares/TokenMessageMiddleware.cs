@@ -33,8 +33,13 @@ namespace AuthService.Middlewares
 
         private async Task AddTokenMessage(HttpContext context, string? token)
         {
-            if (context.Response.StatusCode == StatusCodes.Status401Unauthorized && !string.IsNullOrEmpty(token))
+            if (context.Response.StatusCode == StatusCodes.Status401Unauthorized)
             {
+                if (string.IsNullOrEmpty(token))
+                {
+                    await context.Response.WriteAsync("Missing token");
+                    return;
+                }
                 var validationParameters = new TokenValidationParameters()
                 {
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Constants.JWT_KEY)),
