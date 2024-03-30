@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -37,7 +37,7 @@ namespace AuthService.Middlewares
             {
                 if (string.IsNullOrEmpty(token))
                 {
-                    await context.Response.WriteAsync("Missing token");
+                    await context.Response.WriteAsync("Invalid or missing token");
                     return;
                 }
                 var validationParameters = new TokenValidationParameters()
@@ -58,7 +58,7 @@ namespace AuthService.Middlewares
                     await context.Response.WriteAsync("Token has expired");
                     return;
                 }
-                await context.Response.WriteAsync("Invalid token");
+                await context.Response.WriteAsync("Invalid or missing token");
             }
         }
 
