@@ -12,6 +12,7 @@ using System.Text.Json;
 using System.Security.Claims;
 using Newtonsoft.Json.Linq;
 using AuthService.Models;
+using AuthService.Services.Extentions;
 
 namespace AuthService.Middlewares
 {
@@ -24,9 +25,9 @@ namespace AuthService.Middlewares
             _next = next;
         }
 
-        public async Task Invoke(HttpContext context)
+        public async Task InvokeAsync(HttpContext context)
         {
-            TryExtractAuthorizationToken(context.Request, out var token);
+            context.Request.TryExtractAuthorizationToken(out var token);
             await _next(context);
             await AddTokenMessage(context, token);
         }
@@ -62,22 +63,6 @@ namespace AuthService.Middlewares
             }
         }
 
-        private bool TryExtractAuthorizationToken(HttpRequest request, out string? token)
-        {
-            token = null;
-            if (!request.Headers.ContainsKey("Authorization"))
-            {
-                return false;
-            }
-
-            var authorizationHeader = request.Headers["Authorization"].FirstOrDefault();
-            if (authorizationHeader?.StartsWith("Bearer ") != true)
-            {
-                return false;
-            }
-
-            token = authorizationHeader.Substring("Bearer ".Length).Trim();
-            return true;
-        }
+        
     }
 }

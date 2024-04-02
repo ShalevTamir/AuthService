@@ -1,6 +1,10 @@
 ﻿using AuthService.Models;
+using AuthService.Services;
+using AuthService.Services.DelegatingHandlers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
@@ -15,6 +19,11 @@ namespace AuthService.Middlewares.Extentions
     {
         public static IServiceCollection AddTokenAuthentication(this IServiceCollection services, IEnumerable<string>? hubsUrls = null)
         {
+            services.AddSingleton<TokenPersistenceService>();
+            services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddTransient<TokenAdditionHandler>();
+            services.AddHttpClient(Constants.HTTP_CLIENT_NAME).AddHttpMessageHandler<TokenAdditionHandler>();
+
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
