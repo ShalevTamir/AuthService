@@ -13,6 +13,7 @@ using System.Security.Claims;
 using Newtonsoft.Json.Linq;
 using AuthService.Models;
 using AuthService.Services.Extentions;
+using System.Security.Cryptography;
 
 namespace AuthService.Middlewares
 {
@@ -36,30 +37,27 @@ namespace AuthService.Middlewares
         {
             if (context.Response.StatusCode == StatusCodes.Status401Unauthorized)
             {
-                if (string.IsNullOrEmpty(token))
+                if (!string.IsNullOrEmpty(token))
                 {
-                    await context.Response.WriteAsync("Invalid or missing token");
-                    return;
+                    var validationParameters = new TokenValidationParameters()
+                    {
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Constants.JWT_KEY)),
+                        ValidateLifetime = true,
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
+                        ValidateIssuerSigningKey = false,
+                        ClockSkew = TimeSpan.Zero
+                    };
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var validationResult = await tokenHandler.ValidateTokenAsync(token, validationParameters);
+                    if (validationResult.Exception is SecurityTokenExpiredException)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        await context.Response.WriteAsync("Token has expired");
+                        return;
+                    }
                 }
-                var validationParameters = new TokenValidationParameters()
-                {
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Constants.JWT_KEY)),
-                    ValidateLifetime = true,
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateIssuerSigningKey = false,
-                    ClockSkew = TimeSpan.Zero
-                };
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var validationResult = await tokenHandler.ValidateTokenAsync(token, validationParameters);
-
-                if (validationResult.Exception is SecurityTokenExpiredException)
-                {
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    await context.Response.WriteAsync("Token has expired");
-                    return;
-                }
-                await context.Response.WriteAsync("Invalid or missing token");
+                await context.Response.WriteAsync("Invalid token");
             }
         }
 

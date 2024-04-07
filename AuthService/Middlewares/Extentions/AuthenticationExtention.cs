@@ -1,8 +1,10 @@
 ﻿using AuthService.Models;
 using AuthService.Services;
 using AuthService.Services.DelegatingHandlers;
+using AuthService.Services.Helpers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
@@ -22,12 +24,12 @@ namespace AuthService.Middlewares.Extentions
             services.AddSingleton<TokenPersistenceService>();
             services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddTransient<TokenAdditionHandler>();
-            services.AddHttpClient(Constants.HTTP_CLIENT_NAME).AddHttpMessageHandler<TokenAdditionHandler>();
+            services.AddHttpClient(Constants.HTTP_CLIENT_NAME).AddHttpMessageHandler<TokenAdditionHandler>();            
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                AddRequestAuthentication(options);
+                AddRequestAuthentication(options, TokenValidationParametersHelper.BuildParameters());
                 if (hubsUrls != null)
                 {
                     AddSignalRAuthentication(options, hubsUrls);
@@ -36,18 +38,9 @@ namespace AuthService.Middlewares.Extentions
             return services;
         }
 
-        private static void AddRequestAuthentication(JwtBearerOptions options)
+        private static void AddRequestAuthentication(JwtBearerOptions options, TokenValidationParameters parameters)
         {
-            options.TokenValidationParameters = new TokenValidationParameters()
-            {
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Constants.JWT_KEY)),
-                ValidateIssuer = true,
-                ValidateAudience = false,
-                ValidateIssuerSigningKey = true,
-                ValidateLifetime = true,
-                ValidIssuer = Constants.JWT_ISSUER,
-                ClockSkew = TimeSpan.Zero
-            };
+            options.TokenValidationParameters = parameters;
         }
         private static void AddSignalRAuthentication(JwtBearerOptions options, IEnumerable<string> hubsUrls)
         {
